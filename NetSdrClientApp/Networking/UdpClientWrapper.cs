@@ -37,7 +37,7 @@ public class UdpClientWrapper : IUdpClient
         }
         catch (OperationCanceledException ex)
         {
-            //empty
+            Console.WriteLine(ex.Message);
         }
         catch (Exception ex)
         {

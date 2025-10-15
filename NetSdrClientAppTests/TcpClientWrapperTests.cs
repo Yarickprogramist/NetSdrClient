@@ -16,8 +16,6 @@ namespace NetSdrClientAppTests
     public class TcpClientWrapperTests
     {
         private TcpClientWrapper _clientWrapper;
-        private Mock<Stream> _mockStream;
-        private UdpClientWrapper _udpClient;
 
         [SetUp]
         public void Setup()
