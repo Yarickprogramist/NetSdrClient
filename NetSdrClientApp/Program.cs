@@ -1,6 +1,6 @@
 ﻿using NetSdrClientApp;
 using NetSdrClientApp.Networking;
-
+//tes
 Console.WriteLine(@"Usage:
 C - connect
 D - disconnet
