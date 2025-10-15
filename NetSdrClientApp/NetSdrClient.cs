@@ -100,7 +100,7 @@ namespace NetSdrClientApp
 
             IQStarted = false;
 
-            _udpClient.StopListening();
+            _udpClient.Exit();
         }
 
         public async Task ChangeFrequencyAsync(long hz, int channel)

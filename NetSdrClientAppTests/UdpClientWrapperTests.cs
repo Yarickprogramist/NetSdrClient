@@ -26,7 +26,7 @@ namespace NetSdrClientAppTests
         [Test]
         public void StopListening_ShouldNotThrow_WhenCalledWithoutStart()
         {
-            Assert.DoesNotThrow(() => _udpClientWrapper.StopListening(),
+            Assert.DoesNotThrow(() => _udpClientWrapper.Exit(),
                 "StopListening should not throw even if StartListeningAsync was not called");
         }
 
@@ -55,7 +55,7 @@ namespace NetSdrClientAppTests
 
             // Act
             await Task.Delay(100); // give it time to start
-            _udpClientWrapper.StopListening();
+            _udpClientWrapper.Exit();
 
             // Assert
             await Task.WhenAny(task, Task.Delay(1000));

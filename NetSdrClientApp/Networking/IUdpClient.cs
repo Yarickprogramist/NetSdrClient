@@ -5,6 +5,5 @@ public interface IUdpClient
 
     Task StartListeningAsync();
 
-    void StopListening();
     void Exit();
 }
