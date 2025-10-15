@@ -111,7 +111,7 @@ public class NetSdrClientTests
 
         //assert
         //No exception thrown
-        _updMock.Verify(tcp => tcp.StopListening(), Times.Once);
+        _updMock.Verify(tcp => tcp.Exit(), Times.Once);
         Assert.That(_client.IQStarted, Is.False);
     }
 
