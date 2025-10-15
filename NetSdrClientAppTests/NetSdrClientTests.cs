@@ -1,6 +1,11 @@
 ﻿using Moq;
 using NetSdrClientApp;
 using NetSdrClientApp.Networking;
+using NUnit.Framework;
+using System.Net;
+using System.Net.Sockets;
+using System.Reflection;
+using System.Text;
 
 namespace NetSdrClientAppTests;
 
@@ -54,7 +59,6 @@ public class NetSdrClientTests
         _client.Disconect();
 
         //assert
-        //No exception thrown
         _tcpMock.Verify(tcp => tcp.Disconnect(), Times.Once);
     }
 
@@ -68,19 +72,16 @@ public class NetSdrClientTests
         _client.Disconect();
 
         //assert
-        //No exception thrown
         _tcpMock.Verify(tcp => tcp.Disconnect(), Times.Once);
     }
 
     [Test]
     public async Task StartIQNoConnectionTest()
     {
-
         //act
         await _client.StartIQAsync();
 
         //assert
-        //No exception thrown
         _tcpMock.Verify(tcp => tcp.SendMessageAsync(It.IsAny<byte[]>()), Times.Never);
         _tcpMock.VerifyGet(tcp => tcp.Connected, Times.AtLeastOnce);
     }
@@ -95,7 +96,6 @@ public class NetSdrClientTests
         await _client.StartIQAsync();
 
         //assert
-        //No exception thrown
         _updMock.Verify(udp => udp.StartListeningAsync(), Times.Once);
         Assert.That(_client.IQStarted, Is.True);
     }
@@ -110,10 +110,32 @@ public class NetSdrClientTests
         await _client.StopIQAsync();
 
         //assert
-        //No exception thrown
         _updMock.Verify(tcp => tcp.Exit(), Times.Once);
         Assert.That(_client.IQStarted, Is.False);
     }
 
-    //TODO: cover the rest of the NetSdrClient code here
+    [Test]
+    public async Task SendTcpRequest_WhenNotConnected_ShouldReturnEmptyArrayAndLogMessage()
+    {
+        // Arrange
+        // Force the mock to simulate a disconnected state
+        _tcpMock.Setup(tcp => tcp.Connected).Returns(false);
+
+        // Access the private method via reflection
+        var method = typeof(NetSdrClient)
+            .GetMethod("SendTcpRequest", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        // Redirect Console output
+        using var consoleOutput = new StringWriter();
+        Console.SetOut(consoleOutput);
+
+        var message = Encoding.ASCII.GetBytes("test");
+
+        // Act
+        var result = await (Task<byte[]>)method.Invoke(_client, new object[] { message })!;
+
+        // Assert
+        Assert.That(result, Is.Empty, "Should return empty array when not connected");
+        Assert.That(consoleOutput.ToString(), Does.Contain("No active connection."));
+    }
 }
