@@ -118,14 +118,12 @@ public class NetSdrClientTests
     public async Task SendTcpRequest_WhenNotConnected_ShouldReturnEmptyArrayAndLogMessage()
     {
         // Arrange
-        // Force the mock to simulate a disconnected state
         _tcpMock.Setup(tcp => tcp.Connected).Returns(false);
 
-        // Access the private method via reflection
         var method = typeof(NetSdrClient)
             .GetMethod("SendTcpRequest", BindingFlags.NonPublic | BindingFlags.Instance);
 
-        // Redirect Console output
+        var originalOut = Console.Out; // save original writer
         using var consoleOutput = new StringWriter();
         Console.SetOut(consoleOutput);
 
@@ -135,7 +133,11 @@ public class NetSdrClientTests
         var result = await (Task<byte[]>)method.Invoke(_client, new object[] { message })!;
 
         // Assert
-        Assert.That(result, Is.Empty, "Should return empty array when not connected");
+        Assert.That(result, Is.Empty);
         Assert.That(consoleOutput.ToString(), Does.Contain("No active connection."));
+
+        // Restore original writer so next tests don't crash
+        Console.SetOut(originalOut);
     }
+
 }
