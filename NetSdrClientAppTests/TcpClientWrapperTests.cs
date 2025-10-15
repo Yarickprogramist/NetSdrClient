@@ -1,11 +1,14 @@
-﻿using NUnit.Framework;
+﻿using Moq;
+using NetSdrClientApp.Networking;
+using NUnit.Framework;
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NetSdrClientApp.Networking;
 
 namespace NetSdrClientAppTests
 {
@@ -13,6 +16,8 @@ namespace NetSdrClientAppTests
     public class TcpClientWrapperTests
     {
         private TcpClientWrapper _clientWrapper;
+        private Mock<Stream> _mockStream;
+        private UdpClientWrapper _udpClient;
 
         [SetUp]
         public void Setup()
@@ -119,6 +124,62 @@ namespace NetSdrClientAppTests
             _clientWrapper.Disconnect();
             _clientWrapper.Disconnect(); // Повторний виклик не має кидати виняток
             Assert.Pass();
+        }
+
+        [Test]
+        public async Task SendMessageInternalAsync_WhenConnected_ShouldWriteToStream_RealStream()
+        {
+            // Arrange
+            var listener = new TcpListener(System.Net.IPAddress.Loopback, 0);
+            listener.Start();
+            var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+
+            var tcpClient = new TcpClient();
+            await tcpClient.ConnectAsync("127.0.0.1", port);
+
+            var serverClient = await listener.AcceptTcpClientAsync();
+
+            var stream = tcpClient.GetStream();
+
+            typeof(TcpClientWrapper)
+                .GetField("_tcpClient", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(_clientWrapper, tcpClient);
+
+            typeof(TcpClientWrapper)
+                .GetField("_stream", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(_clientWrapper, stream);
+
+            var data = Encoding.UTF8.GetBytes("Hello");
+
+            var method = typeof(TcpClientWrapper)
+                .GetMethod("SendMessageInternalAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Act
+            await (Task)method!.Invoke(_clientWrapper, new object[] { data })!;
+
+            // Assert: read from server side
+            var buffer = new byte[data.Length];
+            await serverClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+            Assert.AreEqual(data, buffer);
+
+            listener.Stop();
+        }
+
+
+
+        [Test]
+        public void SendMessageInternalAsync_WhenNotConnected_ShouldThrow()
+        {
+            // Arrange
+            var data = Encoding.UTF8.GetBytes("Hello");
+
+            var method = typeof(TcpClientWrapper)
+                .GetMethod("SendMessageInternalAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            // Act + Assert
+            Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await (Task)method!.Invoke(_clientWrapper, new object[] { data })!
+            );
         }
     }
 }
