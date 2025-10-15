@@ -115,10 +115,7 @@ namespace NetSdrClientApp.Networking
                         }
                     }
                 }
-                catch (OperationCanceledException ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                catch (OperationCanceledException ex) { }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error in listening loop: {ex.Message}");

@@ -194,6 +194,5 @@ namespace NetSdrClientAppTests
 
             Assert.That(ex!.Message, Is.EqualTo("Not connected to a server."));
         }
-
     }
 }
