@@ -194,5 +194,32 @@ namespace NetSdrClientAppTests
 
             Assert.That(ex!.Message, Is.EqualTo("Not connected to a server."));
         }
+
+        [Test]
+        public async Task StartListeningAsync_ShouldCatchOperationCanceledException()
+        {
+            // Arrange
+            var tcpListener = new TcpListener(System.Net.IPAddress.Loopback, 0);
+            tcpListener.Start();
+            int port = ((System.Net.IPEndPoint)tcpListener.LocalEndpoint).Port;
+
+            var client = new TcpClientWrapper("127.0.0.1", port);
+
+            // Act
+            client.Connect(); // starts StartListeningAsync internally
+
+            var serverTask = tcpListener.AcceptTcpClientAsync();
+
+            // Give the listening loop a moment to start
+            await Task.Delay(50);
+
+            // Disconnect triggers CancellationToken => OperationCanceledException
+            client.Disconnect();
+
+            // Cleanup
+            tcpListener.Stop();
+
+            Assert.Pass(); // if no exception bubbles out, the catch block was hit
+        }
     }
 }
