@@ -179,5 +179,21 @@ namespace NetSdrClientAppTests
                 await (Task)method!.Invoke(_clientWrapper, new object[] { data })!
             );
         }
+
+        [Test]
+        public void StartListeningAsync_WhenNotConnected_ShouldThrowInvalidOperationException()
+        {
+            // Arrange
+            var method = typeof(TcpClientWrapper)
+                .GetMethod("StartListeningAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Act + Assert
+            var ex = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await (Task)method!.Invoke(_clientWrapper, Array.Empty<object>())
+            );
+
+            Assert.That(ex!.Message, Is.EqualTo("Not connected to a server."));
+        }
+
     }
 }
