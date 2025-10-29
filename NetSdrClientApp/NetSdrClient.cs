@@ -9,15 +9,9 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using static NetSdrClientApp.Messages.NetSdrMessageHelper;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using EchoServer;
 
 namespace NetSdrClientApp
 {
-    public class Test
-    {
-        private readonly EchoServer.EchoServer _echoServer;
-    }
-
     public class NetSdrClient
     {
         private readonly ITcpClient _tcpClient;
