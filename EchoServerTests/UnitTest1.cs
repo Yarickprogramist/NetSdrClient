@@ -1,5 +1,6 @@
 ﻿using Moq;
 using NUnit.Framework;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -27,14 +28,14 @@ namespace EchoServerTests
         [Test]
         public void Constructor_WithPort_CreatesInstance()
         {
-            var server = new EchoServer.EchoServer(5000, _logger);
+            using var server = new EchoServer.EchoServer(5000, _logger);
             server.Should().NotBeNull();
         }
 
         [Test]
         public void Constructor_WithoutLogger_UsesConsoleLogger()
         {
-            var server = new EchoServer.EchoServer(5000);
+            using var server = new EchoServer.EchoServer(5000);
             server.Should().NotBeNull();
         }
 
@@ -45,7 +46,7 @@ namespace EchoServerTests
         [Test]
         public async Task StartAsync_StartsServerAndLogsMessage()
         {
-            var server = new EchoServer.EchoServer(0, _logger);
+            using var server = new EchoServer.EchoServer(0, _logger);
             var startTask = Task.Run(() => server.StartAsync());
 
             await Task.Delay(100); // Give server time to start
@@ -59,13 +60,12 @@ namespace EchoServerTests
         [Test]
         public async Task StartAsync_AcceptsClientConnection()
         {
-            var server = new EchoServer.EchoServer(0, _logger);
             var listener = new TcpListener(IPAddress.Loopback, 0);
             listener.Start();
             int port = ((IPEndPoint)listener.LocalEndpoint).Port;
             listener.Stop();
 
-            server = new EchoServer.EchoServer(port, _logger);
+            using var server = new EchoServer.EchoServer(port, _logger);
             var startTask = Task.Run(() => server.StartAsync());
 
             await Task.Delay(100);
@@ -85,12 +85,40 @@ namespace EchoServerTests
         [Test]
         public async Task StartAsync_StopsWhenCancelled()
         {
-            var server = new EchoServer.EchoServer(0, _logger);
+            using var server = new EchoServer.EchoServer(0, _logger);
             var startTask = Task.Run(() => server.StartAsync());
 
             await Task.Delay(100);
 
             server.Stop();
+            await startTask;
+
+            _loggerMock.Verify(l => l.Log("Server shutdown."), Times.Once);
+        }
+
+        [Test]
+        public async Task StartAsync_HandlesObjectDisposedException()
+        {
+            using var server = new EchoServer.EchoServer(0, _logger);
+            var startTask = Task.Run(() => server.StartAsync());
+
+            await Task.Delay(50);
+
+            server.Dispose(); // Dispose to trigger ObjectDisposedException
+            await startTask;
+
+            _loggerMock.Verify(l => l.Log(It.Is<string>(s => s.Contains("Server started"))), Times.Once);
+        }
+
+        [Test]
+        public async Task StartAsync_HandlesOperationCanceledException()
+        {
+            using var server = new EchoServer.EchoServer(0, _logger);
+            var startTask = Task.Run(() => server.StartAsync());
+
+            await Task.Delay(50);
+
+            server.Stop(); // This cancels the token
             await startTask;
 
             _loggerMock.Verify(l => l.Log("Server shutdown."), Times.Once);
@@ -103,7 +131,7 @@ namespace EchoServerTests
         [Test]
         public async Task Stop_StopsServerAndLogs()
         {
-            var server = new EchoServer.EchoServer(0, _logger);
+            using var server = new EchoServer.EchoServer(0, _logger);
             var startTask = Task.Run(() => server.StartAsync());
 
             await Task.Delay(100);
@@ -112,6 +140,64 @@ namespace EchoServerTests
             await startTask;
 
             _loggerMock.Verify(l => l.Log("Server stopped."), Times.Once);
+            _loggerMock.Verify(l => l.Log("Server shutdown."), Times.Once);
+        }
+
+        [Test]
+        public void Stop_WithoutStarting_DoesNotThrow()
+        {
+            using var server = new EchoServer.EchoServer(0, _logger);
+            var action = () => server.Stop();
+            action.Should().NotThrow();
+        }
+
+        #endregion
+
+        #region Dispose Tests
+
+        [Test]
+        public void Dispose_DisposesResources()
+        {
+            var server = new EchoServer.EchoServer(0, _logger);
+            var action = () => server.Dispose();
+            action.Should().NotThrow();
+        }
+
+        [Test]
+        public void Dispose_CalledMultipleTimes_DoesNotThrow()
+        {
+            var server = new EchoServer.EchoServer(0, _logger);
+            server.Dispose();
+            var action = () => server.Dispose();
+            action.Should().NotThrow();
+        }
+
+        [Test]
+        public async Task Dispose_StopsRunningServer()
+        {
+            var server = new EchoServer.EchoServer(0, _logger);
+            var startTask = Task.Run(() => server.StartAsync());
+
+            await Task.Delay(100);
+
+            server.Dispose();
+            await startTask;
+
+            _loggerMock.Verify(l => l.Log("Server shutdown."), Times.Once);
+        }
+
+        [Test]
+        public async Task UsingStatement_DisposesServerProperly()
+        {
+            Task startTask;
+
+            using (var server = new EchoServer.EchoServer(0, _logger))
+            {
+                startTask = Task.Run(() => server.StartAsync());
+                await Task.Delay(100);
+            } // Dispose called here
+
+            await startTask;
             _loggerMock.Verify(l => l.Log("Server shutdown."), Times.Once);
         }
 
@@ -314,6 +400,7 @@ namespace EchoServerTests
             listener.Stop();
         }
 
+
         #endregion
 
         #region ConsoleLogger Tests
@@ -323,6 +410,22 @@ namespace EchoServerTests
         {
             var logger = new EchoServer.ConsoleLogger();
             var action = () => logger.Log("Test message");
+            action.Should().NotThrow();
+        }
+
+        [Test]
+        public void ConsoleLogger_LogNull_DoesNotThrow()
+        {
+            var logger = new EchoServer.ConsoleLogger();
+            var action = () => logger.Log(null);
+            action.Should().NotThrow();
+        }
+
+        [Test]
+        public void ConsoleLogger_LogEmptyString_DoesNotThrow()
+        {
+            var logger = new EchoServer.ConsoleLogger();
+            var action = () => logger.Log(string.Empty);
             action.Should().NotThrow();
         }
 
