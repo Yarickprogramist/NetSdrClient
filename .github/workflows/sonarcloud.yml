@@ -8,86 +8,79 @@ on:
   workflow_dispatch:
 
 permissions:
-  pull-requests: read
+  pull-requests: read # allows SonarCloud to decorate PRs with analysis results
 
 jobs:
   sonar-check:
     name: Sonar Check
     runs-on: windows-latest
     steps:
-      # Checkout
+      # 1) Checkout
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Setup .NET
+      # 2) Setup .NET
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      # Install SonarScanner
-      - name: Install SonarScanner
+      # 3) Install SonarScanner for .NET
+      - name: SonarScanner Begin
         run: |
           dotnet tool install --global dotnet-sonarscanner
           echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
-        shell: pwsh
-
-      # Install ReportGenerator
-      - name: Install ReportGenerator
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
-        shell: pwsh
-
-      # SonarScanner Begin
-      - name: SonarScanner Begin
-        run: |
           dotnet sonarscanner begin `
             /k:"Yarickprogramist_NetSdrClient" `
             /o:"yarickprogramist" `
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-            /d:sonar.cs.opencover.reportsPaths="coverage.opencover.xml" `
+            /d:sonar.cs.opencover.reportsPaths="CoverageMerged\coverage.xml" `
+            /d:sonar.cpd.cs.minimumTokens=40 `
+            /d:sonar.cpd.cs.minimumLines=5 `
             /d:sonar.exclusions=**/bin/**,**/obj/**,**/sonarcloud.yml `
             /d:sonar.qualitygate.wait=true
         shell: pwsh
 
-      # Restore & Build
+      # 4) Restore & build
       - name: Restore
         run: dotnet restore NetSdrClient.sln
       - name: Build
         run: dotnet build NetSdrClient.sln -c Release --no-restore
 
-      # Prepare coverage folders
+      # 5) Prepare TestResults folders
       - name: Prepare TestResults folders
         run: |
           New-Item -ItemType Directory -Force -Path NetSdrClientAppTests\TestResults
           New-Item -ItemType Directory -Force -Path EchoServerTests\TestResults
         shell: pwsh
 
-      # Run tests with coverage
+      # 6) Run tests with coverage
       - name: Run Tests with Coverlet
         run: |
           dotnet test NetSdrClientAppTests/NetSdrClientAppTests.csproj -c Release `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=opencover `
-            /p:CoverletOutput=NetSdrClientAppTests/TestResults/coverage1.xml
+            /p:CoverletOutput=NetSdrClientAppTests\TestResults\coverage1.xml
 
           dotnet test EchoServerTests/EchoServerTests.csproj -c Release `
             /p:CollectCoverage=true `
             /p:CoverletOutputFormat=opencover `
-            /p:CoverletOutput=EchoServerTests/TestResults/coverage2.xml
+            /p:CoverletOutput=EchoServerTests\TestResults\coverage2.xml
         shell: pwsh
 
-      # Merge coverage reports
+      # 7) Merge coverage reports
       - name: Merge Coverage Reports
         run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool
           reportgenerator `
-            -reports:NetSdrClientAppTests/TestResults/coverage1.xml;EchoServerTests/TestResults/coverage2.xml `
+            -reports:"NetSdrClientAppTests\TestResults\coverage1.xml;EchoServerTests\TestResults\coverage2.xml" `
             -targetdir:CoverageMerged `
             -reporttypes:Xml
-          
-          if (-Not (Test-Path CoverageMerged/coverage.xml)) { Write-Error "Coverage files are missing!" }
+
+          if (-Not (Test-Path CoverageMerged\coverage.xml)) { Write-Error "Coverage files are missing!" }
         shell: pwsh
 
-      # SonarScanner End
+      # 8) End SonarScanner
       - name: SonarScanner End
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
         shell: pwsh
