@@ -31,7 +31,7 @@ jobs:
             /k:"Yarickprogramist_NetSdrClient" `
             /o:"yarickprogramist" `
             /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-            /d:sonar.cs.opencover.reportsPaths="CoverageMerged\Cobertura.xml" `
+            /d:sonar.cs.opencover.reportsPaths="CoverageMerged\coverage.xml" `
             /d:sonar.cpd.cs.minimumTokens=40 `
             /d:sonar.cpd.cs.minimumLines=5 `
             /d:sonar.exclusions=**/bin/**,**/obj/**,**/sonarcloud.yml `
