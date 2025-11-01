@@ -1,8 +1,3 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: SonarCloud analysis
 
 on:
@@ -31,12 +26,12 @@ jobs:
       - name: SonarScanner Begin
         run: |
           dotnet tool install --global dotnet-sonarscanner
-          echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
+          echo "$env:USERPROFILE/.dotnet/tools" >> $env:GITHUB_PATH
           dotnet sonarscanner begin `
           /k:"Yarickprogramist_NetSdrClient" `
           /o:"yarickprogramist" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-          /d:sonar.cs.opencover.reportsPaths="NetSdrClientAppTests\TestResults\coverage.xml;EchoServerTests\TestResults\coverage.xml" `
+          /d:sonar.cs.opencover.reportsPaths="NetSdrClientAppTests/TestResults/coverage.xml,EchoServerTests/TestResults/coverage.xml" `
           /d:sonar.cpd.cs.minimumTokens=40 `
           /d:sonar.cpd.cs.minimumLines=5 `
           /d:sonar.exclusions=**/bin/**,**/obj/**,**/sonarcloud.yml `
@@ -51,29 +46,29 @@ jobs:
 
       - name: Prepare TestResults folders
         run: |
-          New-Item -ItemType Directory -Force -Path NetSdrClientAppTests\TestResults
-          New-Item -ItemType Directory -Force -Path EchoServerTests\TestResults
+          New-Item -ItemType Directory -Force -Path NetSdrClientAppTests/TestResults
+          New-Item -ItemType Directory -Force -Path EchoServerTests/TestResults
         shell: pwsh
 
       - name: Tests with coverage (OpenCover)
         run: |
           dotnet test NetSdrClientAppTests/NetSdrClientAppTests.csproj -c Release `
             /p:CollectCoverage=true `
-            /p:CoverletOutput=NetSdrClientAppTests\TestResults\coverage.xml `
+            /p:CoverletOutput=NetSdrClientAppTests/TestResults/coverage.xml `
             /p:CoverletOutputFormat=opencover
 
           dotnet test EchoServerTests/EchoServerTests.csproj -c Release `
             /p:CollectCoverage=true `
-            /p:CoverletOutput=EchoServerTests\TestResults\coverage.xml `
+            /p:CoverletOutput=EchoServerTests/TestResults/coverage.xml `
             /p:CoverletOutputFormat=opencover
         shell: pwsh
 
       - name: Check coverage files
         run: |
           Write-Host "NetSdrClientAppTests coverage file:"
-          Get-ChildItem -Recurse NetSdrClientAppTests\TestResults
+          Get-ChildItem -Recurse NetSdrClientAppTests/TestResults
           Write-Host "EchoServerTests coverage file:"
-          Get-ChildItem -Recurse EchoServerTests\TestResults
+          Get-ChildItem -Recurse EchoServerTests/TestResults
         shell: pwsh
 
       # 3) END: SonarScanner
