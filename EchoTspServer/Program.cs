@@ -18,12 +18,13 @@ namespace EchoServer
         public void Log(string message) => Console.WriteLine(message);
     }
 
-    public class EchoServer
+    public class EchoServer : IDisposable
     {
         private readonly int _port;
         private readonly ILogger _logger;
         private TcpListener? _listener;
         private readonly CancellationTokenSource _cts;
+        private bool _disposed;
 
         public EchoServer(int port, ILogger? logger = null)
         {
@@ -87,6 +88,17 @@ namespace EchoServer
                 client.Close();
                 logger.Log("Client disconnected.");
             }
+        }
+
+        // Dispose pattern to clean up CancellationTokenSource and listener
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            _cts.Cancel();
+            _cts.Dispose();
+            _listener?.Stop();
+            _disposed = true;
         }
     }
 }
