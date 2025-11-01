@@ -1,3 +1,8 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
 name: SonarCloud analysis
 
 on:
@@ -26,12 +31,12 @@ jobs:
       - name: SonarScanner Begin
         run: |
           dotnet tool install --global dotnet-sonarscanner
-          echo "$env:USERPROFILE/.dotnet/tools" >> $env:GITHUB_PATH
+          echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
           dotnet sonarscanner begin `
           /k:"Yarickprogramist_NetSdrClient" `
           /o:"yarickprogramist" `
           /d:sonar.token="${{ secrets.SONAR_TOKEN }}" `
-          /d:sonar.cs.opencover.reportsPaths="NetSdrClientAppTests/TestResults/coverage.xml,EchoServerTests/TestResults/coverage.xml" `
+          /d:sonar.cs.opencover.reportsPaths="CoverageMerged/Summary.xml" `
           /d:sonar.cpd.cs.minimumTokens=40 `
           /d:sonar.cpd.cs.minimumLines=5 `
           /d:sonar.exclusions=**/bin/**,**/obj/**,**/sonarcloud.yml `
@@ -44,12 +49,15 @@ jobs:
       - name: Build
         run: dotnet build NetSdrClient.sln -c Release --no-restore
 
+      # Prepare TestResults folders
       - name: Prepare TestResults folders
         run: |
-          New-Item -ItemType Directory -Force -Path NetSdrClientAppTests/TestResults
-          New-Item -ItemType Directory -Force -Path EchoServerTests/TestResults
+          New-Item -ItemType Directory -Force -Path NetSdrClientAppTests\TestResults
+          New-Item -ItemType Directory -Force -Path EchoServerTests\TestResults
+          New-Item -ItemType Directory -Force -Path CoverageMerged
         shell: pwsh
 
+      # Run tests with coverage
       - name: Tests with coverage (OpenCover)
         run: |
           dotnet test NetSdrClientAppTests/NetSdrClientAppTests.csproj -c Release `
@@ -63,12 +71,21 @@ jobs:
             /p:CoverletOutputFormat=opencover
         shell: pwsh
 
+      # Merge coverage reports into a single XML for SonarCloud
+      - name: Merge coverage reports
+        run: |
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+          $reports = @(
+            "NetSdrClientAppTests/TestResults/coverage.xml",
+            "EchoServerTests/TestResults/coverage.xml"
+          )
+          reportgenerator "-reports:$($reports -join ';')" "-targetdir:CoverageMerged" -reporttypes:Xml
+        shell: pwsh
+
       - name: Check coverage files
         run: |
-          Write-Host "NetSdrClientAppTests coverage file:"
-          Get-ChildItem -Recurse NetSdrClientAppTests/TestResults
-          Write-Host "EchoServerTests coverage file:"
-          Get-ChildItem -Recurse EchoServerTests/TestResults
+          Write-Host "Merged coverage file:"
+          Get-ChildItem -Recurse CoverageMerged
         shell: pwsh
 
       # 3) END: SonarScanner
