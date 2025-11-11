@@ -7,6 +7,8 @@
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Yarickprogramist_NetSdrClient&metric=bugs)](https://sonarcloud.io/summary/new_code?id=Yarickprogramist_NetSdrClient)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Yarickprogramist_NetSdrClient&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=Yarickprogramist_NetSdrClient)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=Yarickprogramist_NetSdrClient&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=Yarickprogramist_NetSdrClient)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Yarickprogramist_NetSdrClient&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Yarickprogramist_NetSdrClient)
+
 
 
 Цей репозиторій  використовується для курсу **реінжиніринг ПЗ**. 
