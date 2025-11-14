@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace EchoServer
 {
-    // Інтерфейс для логування (можна замінити на ILogger в реальному проєкті)
     public interface ILogger
     {
         void Log(string message);
@@ -90,7 +89,6 @@ namespace EchoServer
             }
         }
 
-        // Dispose pattern to clean up CancellationTokenSource and listener
         public void Dispose()
         {
             if (_disposed) return;

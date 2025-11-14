@@ -57,9 +57,11 @@ namespace NetSdrClientApp.Networking
             if (Connected)
             {
                 _cts?.Cancel();
+                _cts?.Dispose();
                 _stream?.Close();
+                _stream?.Dispose();
                 _tcpClient?.Close();
-
+                
                 _cts = null;
                 _tcpClient = null;
                 _stream = null;
