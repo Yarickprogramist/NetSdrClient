@@ -1,4 +1,4 @@
-jjfy# Лабораторні з реінжинірингу (8×)  
+# Лабораторні з реінжинірингу (8×)  
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Yarickprogramist_NetSdrClient&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Yarickprogramist_NetSdrClient)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=Yarickprogramist_NetSdrClient&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=Yarickprogramist_NetSdrClient)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Yarickprogramist_NetSdrClient&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Yarickprogramist_NetSdrClient)
